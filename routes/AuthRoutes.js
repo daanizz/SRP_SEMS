@@ -8,21 +8,37 @@ const router = express.Router();
 // Register / Create Account
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { fullName, email, password, role } = req.body;
+    const requesterRole = req.user.role; // role of logged-in user
 
-    if (!email || !password || !role) {
+    if (!fullName || !email || !password || !role) {
       return res.status(400).json({ message: "All fields required" });
+    }
+
+    const allowedRoles = {
+      admin: ["principal", "teacher", "staff"],
+      principal: ["teacher", "student"],
+      teacher: ["student"],
+    };
+
+    if (!allowedRoles[requesterRole]?.includes(role)) {
+      return res
+        .status(403)
+        .json({
+          message: `You are not allowed to create a user with role '${role}'`,
+        });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser)
       return res.status(400).json({ message: "User already exists" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
+      fullName,
       email,
-      password: hashedPassword,
+      hashPassword,
       role,
     });
 
@@ -45,17 +61,37 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    const validPassword = await bcrypt.compare(password, user.password);
+    // Check password
+    const validPassword = await bcrypt.compare(password, user.hashPassword);
     if (!validPassword)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign(
+    //Access Token (short life)
+    const accessToken = jwt.sign(
       { id: user._id, role: user.role },
-      process.env.JWT_SECRET || "secretkey",
-      { expiresIn: "1h" }
+      process.env.ACCESS_SECRET || "access_secret",
+      { expiresIn: "1hr" } // 15 minutes
     );
 
-    res.json({ message: "Login successful", token });
+    //  Refresh Token (long life)
+    const refreshToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.REFRESH_SECRET || "refresh_secret",
+      { expiresIn: "7d" } // 7 days
+    );
+
+    // Refresh Token in HttpOnly cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // only https in prod
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return res.json({
+      message: "Login successful",
+      accessToken,
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }

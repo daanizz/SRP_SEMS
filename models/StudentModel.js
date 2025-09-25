@@ -32,6 +32,9 @@ const Student = new mongoose.Schema({
   healthIssues: {
     type: String,
   },
+  profilePath: {
+    type: String,
+  },
 });
 
 export default mongoose.model("Student", Student);

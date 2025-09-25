@@ -1,39 +1,37 @@
 import mongoose from "mongoose";
 
-const Student=new mongoose.Schema({
-     Full_Name:{
-        type:String,
-        required:true,
-    },
-    DOB:{
-        type:Date,
-    },
-    Behaviour:{
-        type:String,
-        required:true
-    },
-    hobby:{
-        type:String,
-        required:true
-    },
-    EmergencyContact:{
-        type:Number,
-        required:true
-    },
-    ConsultantDr:{
-        type:String
-    },
-    DrNumber:{
-        type:Number
-    },
-    ClassID:{
-        type:Number,
-        required:true
-    },
-    HealthIssues:{
-        type:String,
-    }
+const Student = new mongoose.Schema({
+  dob: {
+    type: Date,
+  },
+  behaviour: {
+    type: String,
+    required: true,
+  },
+  hobby: {
+    type: String,
+    required: true,
+  },
+  emergencyContact: {
+    type: Number,
+    required: true,
+    match: [/^\d{10}$/, "Must be exactly 10 digits"],
+  },
+  consultantDr: {
+    type: String,
+  },
+  drNumber: {
+    type: Number,
+    match: [/^\d{10}$/, "Must be exactly 10 digits"],
+  },
+  classID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Class",
+    required: true,
+  },
+  healthIssues: {
+    type: String,
+  },
 });
 
-
-export default mongoose.model("Student",Student);
+export default mongoose.model("Student", Student);

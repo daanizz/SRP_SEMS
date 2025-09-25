@@ -1,17 +1,19 @@
 import express from "express";
 import dotenv from "dotenv";
+import Authentication from "./routes/AuthRoutes.js";
 
-
-const app=express();
+const app = express();
 
 dotenv.config();
 
-const PORT=process.env.PORT || 5050;
+const PORT = process.env.PORT || 5050;
 
-app.get("/",(req,res)=>{
-    res.send("Frontend to be added here..")
+app.get("/", (req, res) => {
+  res.send("Frontend to be added here..");
 });
 
-app.listen(PORT,()=>{
-    console.log(`http://localhost:${PORT}`);
+app.get("/Auth", Authentication);
+
+app.listen(PORT, () => {
+  console.log(`http://localhost:${PORT}`);
 });

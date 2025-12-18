@@ -1,43 +1,54 @@
 import express from "express";
-import Update from "../models/Update.js";
+import Update from "../models/UpdatesModel.js";
 import { authenticate } from "../middleware/auth.js";
-import Evaluation from "../models/Evaluation.js";
-import Student from "../models/Student.js";
+import Evaluation from "../models/EvaluationModel.js";
+import Student from "../models/StudentModel.js";
 
 const router = express.Router();
 
-// POST route to add a new Update
+// ⭐ Add Student (teacher/admin)
+// ⭐ Add Student (teacher/admin)
+router.post("/students/add", authenticate, async (req, res) => {
+  try {
+    if (!["teacher", "admin"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Only teacher/admin can add students" });
+    }
+
+    const student = await Student.create(req.body);
+
+    return res.status(201).json({
+      message: "Student created successfully",
+      student,
+    });
+
+  } catch (err) {
+    console.error("Add student error:", err);
+    return res.status(500).json({
+      message: "Failed to create student",
+      error: err.message,
+    });
+  }
+});
+// Subject (admin or teacher)
+
+
+
+// POST route to add a new Update (teacher/admin)
 router.post("/addUpdate", authenticate, async (req, res) => {
   try {
     const { studentId, updateMessage } = req.body;
     const requesterRole = req.user.role;
-    const teacherId = req.user.id; // logged-in teacher/principal ID
+    const teacherId = req.user.id;
 
-    // Only teacher or principal can create an update
-    if (!["teacher", "principal"].includes(requesterRole)) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to create an update" });
+    if (!["teacher", "admin"].includes(requesterRole)) {
+      return res.status(403).json({ message: "Not allowed" });
     }
-
-    // Validate input
     if (!studentId || !updateMessage) {
-      return res
-        .status(400)
-        .json({ message: "studentId and updateMessage are required" });
+      return res.status(400).json({ message: "studentId and updateMessage are required" });
     }
 
-    // Create new Update
-    const newUpdate = await Update.create({
-      teacherId,
-      studentId,
-      updateMessage,
-    });
-
-    res.status(201).json({
-      message: "Update created successfully",
-      update: newUpdate,
-    });
+    const newUpdate = await Update.create({ teacherId, studentId, updateMessage });
+    res.status(201).json({ message: "Update created successfully", update: newUpdate });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -47,73 +58,64 @@ router.post("/addEvaluation", authenticate, async (req, res) => {
   try {
     const { stdId, subjectId, marks, remarks, termId } = req.body;
     const requesterRole = req.user.role;
-    const techrId = req.user.id; // logged-in teacher/principal
+    const techrId = req.user.id;
 
-    // Only teacher or principal can create an evaluation
-    if (!["teacher", "principal"].includes(requesterRole)) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to create an evaluation" });
+    if (!["teacher", "admin"].includes(requesterRole)) {
+      return res.status(403).json({ message: "Not allowed" });
     }
-
-    // Validate input
     if (!stdId || !subjectId || marks == null || !termId) {
-      return res
-        .status(400)
-        .json({ message: "stdId, subjectId, marks, and termId are required" });
+      return res.status(400).json({ message: "stdId, subjectId, marks, and termId are required" });
     }
 
-    // Create new Evaluation
-    const newEvaluation = await Evaluation.create({
-      stdId,
-      techrId,
-      subjectId,
-      marks,
-      remarks,
-      termId,
-    });
-
-    res.status(201).json({
-      message: "Evaluation created successfully",
-      evaluation: newEvaluation,
-    });
+    const newEvaluation = await Evaluation.create({ stdId, techrId, subjectId, marks, remarks, termId });
+    res.status(201).json({ message: "Evaluation created successfully", evaluation: newEvaluation });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
-router.put("/updateStudent/:id", authenticate, async (req, res) => {
+// Update student (teacher/admin)
+router.put("/students/:id", authenticate, async (req, res) => {
   try {
-    const studentId = req.params.id;
-    const requesterRole = req.user.role;
-    const updates = req.body;
-
-    // Only admin, principal, or the student themselves can update
-    if (
-      !["admin", "principal"].includes(requesterRole) &&
-      req.user.id !== studentId
-    ) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to update this student" });
+    if (!["teacher", "admin"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Not allowed" });
     }
 
-    // Update student
+    const studentId = req.params.id;
+    const updates = req.body;
+
     const updatedStudent = await Student.findByIdAndUpdate(studentId, updates, {
       new: true,
       runValidators: true,
     });
+    if (!updatedStudent) return res.status(404).json({ message: "Student not found" });
 
-    if (!updatedStudent)
-      return res.status(404).json({ message: "Student not found" });
-
-    res.json({
-      message: "Student updated successfully",
-      student: updatedStudent,
-    });
+    res.json({ message: "Student updated successfully", student: updatedStudent });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
+// GET classes by academic year + category
+
+// GET classes for logged-in teacher
+router.get("/teacher/classes", authenticate, async (req, res) => {
+  try {
+    if (!["teacher", "admin"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    const classes = await Class.find({
+      teacherId: req.user.id,
+    })
+      .populate("categoryId", "name")
+      .populate("academicYearId", "year");
+
+    res.json(classes);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 
 export default router;

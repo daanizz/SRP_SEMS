@@ -1,66 +1,99 @@
 import express from "express";
 import AcademicSchema from "../models/AcademicSchema.js";
 import { authenticate } from "../middleware/auth.js";
-import Term from "../models/Term.js";
-import Category from "../models/Category.js";
-import Subject from "../models/StudentModel.js";
-import Class from "../models/Class.js";
-
+import Term from "../models/TermSchema.js";
+import Category from "../models/CategoryModel.js";
+import Subject from "../models/SubjectSchema.js";
+import Class from "../models/ClassModel.js";
+import Student from "../models/StudentModel.js";
+import User from "../models/UserModel.js";
 const router = express.Router();
 
-// POST route to add a new Academic Schema
-router.post("/addAcademicSchema", authenticate, async (req, res) => {
+// GET all teachers (admin only)
+router.get("/getTeachers", authenticate, async (req, res) => {
   try {
-    const { year, categId } = req.body;
-
-    // Ensure the logged-in user is admin or principal
-    const requesterRole = req.user.role;
-    if (!["admin", "principal"].includes(requesterRole)) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to create an Academic Schema" });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admins only" });
     }
 
-    // Validate input
-    if (!year || !categId) {
-      return res
-        .status(400)
-        .json({ message: "Year and Category ID are required" });
-    }
+    const teachers = await User.find({ role: "teacher" })
+      .select("_id fullName email");
 
-    // Create new AcademicSchema
-    const newSchema = await AcademicSchema.create({ year, categId });
-
-    res.status(201).json({
-      message: "Academic Schema created successfully",
-      academicSchema: newSchema,
-    });
+    res.json(teachers);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
-// POST route to add a new Term
+// ⭐ Create Academic Year (admin only)
+router.post("/addAcademicYear", authenticate, async (req, res) => {
+  try {
+    const { year } = req.body;
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+
+    if (!year) {
+      return res.status(400).json({ message: "Year is required" });
+    }
+
+    // Check for duplicate year
+    const existing = await AcademicSchema.findOne({ year });
+    if (existing) {
+      return res.status(400).json({ message: "Academic Year already exists" });
+    }
+
+    const newYear = await AcademicSchema.create({ year });
+
+    res.status(201).json({
+      message: "Academic Year created successfully",
+      academicYear: newYear,
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+router.get("/getAcademicYears", authenticate, async (req, res) => {
+  try {
+    const years = await AcademicSchema.find().sort({ year: 1 });
+    res.json({ years });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+router.delete("/deleteAcademicYear/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+
+    await AcademicSchema.findByIdAndDelete(req.params.id);
+
+    res.json({ message: "Academic Year deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// Term (admin only)
+// Term (admin only)
 router.post("/addTerm", authenticate, async (req, res) => {
   try {
     const { startDate, endDate, schemaId } = req.body;
-    const requesterRole = req.user.role;
 
-    // Only admin or principal can create a term
-    if (!["admin", "principal"].includes(requesterRole)) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to create a term" });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admins only" });
     }
 
-    // Validate input
     if (!startDate || !endDate || !schemaId) {
-      return res
-        .status(400)
-        .json({ message: "startDate, endDate and schemaId are required" });
+      return res.status(400).json({
+        message: "startDate, endDate and schemaId are required",
+      });
     }
 
-    // Create new term
     const newTerm = await Term.create({
       startDate,
       endDate,
@@ -75,37 +108,18 @@ router.post("/addTerm", authenticate, async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
-
-router.post("/addCategory", authenticate, async (req, res) => {
+// GET all terms (admin & teacher)
+router.get("/getTerms", authenticate, async (req, res) => {
   try {
-    const { name, teacher_id, about } = req.body;
-    const requesterRole = req.user.role;
-
-    // Only admin or principal can create a category
-    if (!["admin", "principal"].includes(requesterRole)) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to create a category" });
+    if (!["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Not allowed" });
     }
 
-    // Validate input
-    if (!name || !teacher_id) {
-      return res
-        .status(400)
-        .json({ message: "Name and teacher_id are required" });
-    }
+    const terms = await Term.find()
+      .populate("schemaId", "year")
+      .sort({ startDate: 1 });
 
-    // Create new Category
-    const newCategory = await Category.create({
-      name,
-      teacher_id,
-      about,
-    });
-
-    res.status(201).json({
-      message: "Category created successfully",
-      category: newCategory,
-    });
+    res.json(terms);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -113,28 +127,23 @@ router.post("/addCategory", authenticate, async (req, res) => {
 
 router.post("/addSubject", authenticate, async (req, res) => {
   try {
-    const { name, categId, termId } = req.body;
-    const requesterRole = req.user.role;
+    const { name, categoryId, termId, teacherId } = req.body;
 
-    // Only admin, principal, or teacher can create a subject
-    if (!["admin", "principal", "teacher"].includes(requesterRole)) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to create a subject" });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admins only" });
     }
 
-    // Validate input
-    if (!name || !categId || !termId) {
-      return res
-        .status(400)
-        .json({ message: "Name, categId, and termId are required" });
+    if (!name || !categoryId || !termId || !teacherId) {
+      return res.status(400).json({
+        message: "name, categoryId, termId and teacherId are required",
+      });
     }
 
-    // Create new Subject
     const newSubject = await Subject.create({
       name,
-      categId,
+      categoryId,
       termId,
+      teacherId,
     });
 
     res.status(201).json({
@@ -142,34 +151,71 @@ router.post("/addSubject", authenticate, async (req, res) => {
       subject: newSubject,
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("ADD SUBJECT ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
+
+
+// Category (admin only)
+router.post("/addCategory", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin")
+      return res.status(403).json({ message: "Admins only" });
+
+    const { name, about } = req.body;
+
+    if (!name)
+      return res.status(400).json({ message: "Category name is required" });
+
+    // Prevent duplicates
+    const exists = await Category.findOne({ name });
+    if (exists)
+      return res.status(400).json({ message: "Category already exists" });
+
+    const newCategory = await Category.create({ name, about });
+
+    res.status(201).json({
+      message: "Category created successfully",
+      category: newCategory
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+router.get("/getCategories", authenticate, async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ name: 1 });
+    res.json(categories);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+// Class (admin only)
 router.post("/addClass", authenticate, async (req, res) => {
   try {
-    const { name, category, teacherId } = req.body;
-    const requesterRole = req.user.role;
+    const { name, categoryId, teacherId, academicYearId } = req.body;
 
-    // Only admin or principal can create a class
-    if (!["admin", "principal"].includes(requesterRole)) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to create a class" });
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admins only" });
     }
 
-    // Validate input
-    if (!name || !category || !teacherId) {
-      return res
-        .status(400)
-        .json({ message: "name, category, and teacherId are required" });
+    if (!name || !categoryId || !teacherId || !academicYearId) {
+      return res.status(400).json({
+        message: "name, categoryId, teacherId and academicYearId are required",
+      });
     }
 
-    // Create new Class
     const newClass = await Class.create({
       name,
-      category,
+      categoryId,
       teacherId,
+      academicYearId,
     });
 
     res.status(201).json({
@@ -177,8 +223,52 @@ router.post("/addClass", authenticate, async (req, res) => {
       class: newClass,
     });
   } catch (err) {
+    console.error("ADD CLASS ERROR:", err);
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
+  }
+});
+
+// GET all classes (admin)
+router.get("/classes", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+
+    const classes = await Class.find()
+      .populate("categoryId", "name")
+      .populate("teacherId", "fullName email")
+      .populate("academicYearId", "year");
+
+    res.json(classes);
+  } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+// GET classes by academic year + category
+router.get("/classes/filter", authenticate, async (req, res) => {
+  try {
+    const { academicYearId, categoryId } = req.query;
+
+    if (!academicYearId || !categoryId) {
+      return res.status(400).json({
+        message: "academicYearId and categoryId are required",
+      });
+    }
+
+    const classes = await Class.find({
+      academicYearId,
+      categoryId,
+    });
+
+    res.json(classes);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 
 export default router;

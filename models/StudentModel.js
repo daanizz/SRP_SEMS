@@ -1,40 +1,36 @@
 import mongoose from "mongoose";
 
-const Student = new mongoose.Schema({
-  dob: {
-    type: Date,
+
+ const Student = new mongoose.Schema({
+  name: String,
+  dob: Date,
+
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category",
+    required: true
   },
-  behaviour: {
-    type: String,
-    required: true,
-  },
-  hobby: {
-    type: String,
-    required: true,
-  },
-  emergencyContact: {
-    type: Number,
-    required: true,
-    match: [/^\d{10}$/, "Must be exactly 10 digits"],
-  },
-  consultantDr: {
-    type: String,
-  },
-  drNumber: {
-    type: Number,
-    match: [/^\d{10}$/, "Must be exactly 10 digits"],
-  },
-  classID: {
+
+  classId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Class",
-    required: true,
+    required: true
   },
-  healthIssues: {
-    type: String,
+
+  academicYearId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "AcademicSchema",
+    required: true
   },
-  profilePath: {
-    type: String,
-  },
-});
+
+  behaviour: String,
+  hobby: String,
+  healthIssues: String,
+
+  emergencyContact: String,
+  consultantDr: String,
+  drNumber: String,
+
+}, { timestamps: true });
 
 export default mongoose.model("Student", Student);

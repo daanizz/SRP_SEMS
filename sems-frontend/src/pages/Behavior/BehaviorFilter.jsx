@@ -21,10 +21,11 @@ const BehaviorFilter = ({
         >
           <option value="">Select Student</option>
           {students.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
+  <option key={s._id} value={s.name}>
+    {s.name}
+  </option>
+))}
+
         </select>
       </div>
 

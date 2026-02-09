@@ -7,6 +7,10 @@ import Subject from "../models/SubjectSchema.js";
 import Class from "../models/ClassModel.js";
 import Student from "../models/StudentModel.js";
 import User from "../models/UserModel.js";
+import Evaluation from "../models/EvaluationModel.js";
+import TherapyLog from "../models/TherapyLogModel.js";
+import BehaviorLog from "../models/BehaviorLogModel.js";
+import Update from "../models/UpdatesModel.js";
 const router = express.Router();
 
 // GET all teachers (admin only)
@@ -267,6 +271,87 @@ router.get("/classes/filter", authenticate, async (req, res) => {
     res.json(classes);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// GET all students with filters (admin only)
+router.get("/students", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin" && req.user.role !== "teacher") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+
+    const { name, categoryId } = req.query;
+
+    let filter = {};
+
+    if (name) {
+      filter.name = { $regex: name, $options: "i" }; // case-insensitive
+    }
+
+    if (categoryId) {
+      filter.categoryId = categoryId;
+    }
+
+    const students = await Student.find(filter)
+      .populate("categoryId", "name")
+      .populate("classId", "name")
+      .populate("academicYearId", "year")
+      .sort({ createdAt: -1 });
+
+    res.json(students);
+  } catch (err) {
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
+  }
+});
+
+router.get("/students/:id/details", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin" && req.user.role !== "teacher") {
+      return res.status(403).json({ message: "Admins only" });
+    }
+
+    const studentId = req.params.id;
+
+    const student = await Student.findById(studentId)
+      .populate("categoryId", "name")
+      .populate("classId", "name")
+      .populate("academicYearId", "year");
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const evaluations = await Evaluation.find({ studentId })
+      .populate("subjectId", "name")
+      .populate("termId", "startDate endDate")
+      .populate("evaluatedBy", "fullName")
+      .sort({ createdAt: -1 });
+
+    const therapies = await TherapyLog.find({ studentId })
+      .sort({ date: -1 });
+
+    const behaviors = await BehaviorLog.find({ studentId })
+      .sort({ date: -1 });
+
+    const updates = await Update.find({ studentId })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      student,
+      evaluations,
+      therapies,
+      behaviors,
+      updates,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 });
 

@@ -2,3 +2,10 @@ import API from "./authApi";  // reuse same axios instance
 
 export const addStudent = (data) =>
    API.post("/api/teacher/students/add", data);
+
+
+export const getStudents = (params) =>
+  API.get("/api/admin/students", { params });
+
+export const getStudentDetails = (studentId) =>
+  API.get(`/api/admin/students/${studentId}/details`);

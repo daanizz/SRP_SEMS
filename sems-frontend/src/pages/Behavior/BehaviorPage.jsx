@@ -4,22 +4,44 @@ import BehaviorFilter from "./BehaviorFilter";
 import BehaviorTable from "./BehaviorTable";
 import BehaviorDetailsModal from "../../components/BehaviorDetailsModal";
 import AddBehaviorModal from "../../components/AddBehaviorModal";
-import { behaviorData } from "./behaviorData";
+import { useEffect } from "react";
+import { getStudents } from "../../api/studentApi";
+import { getBehaviorLogs } from "../../api/behaviorApi";
 
-if (!localStorage.getItem("accessToken")) {
-  window.location.href = "/login";
-}
+
+// if (!localStorage.getItem("accessToken")) {
+//   window.location.href = "/login";
+// }
 
 const BehaviorPage = () => {
-  const [selectedStudent, setSelectedStudent] = useState("");
-  const [selectedDate, setSelectedDate] = useState("03-12-2025");
-  const [selectedLog, setSelectedLog] = useState(null);
   const [activeNav, setActiveNav] = useState("Behavior");
+  const [students, setStudents] = useState([]);
+const [selectedStudent, setSelectedStudent] = useState("");
+const [selectedDate, setSelectedDate] = useState("");
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [logs, setLogs] = useState(behaviorData);
+const [logs, setLogs] = useState([]);
+const [selectedLog, setSelectedLog] = useState(null);
+const [showAddModal, setShowAddModal] = useState(false);
 
-  const students = ["John Doe", "Jane Smith", "Mike Johnson"];
+
+useEffect(() => {
+  getStudents().then((res) => setStudents(res.data));
+}, []);
+
+
+const fetchBehaviorLogs = () => {
+  if (!selectedStudent) return;
+
+  getBehaviorLogs({
+    studentId: selectedStudent,
+    date: selectedDate,
+  }).then((res) => setLogs(res.data));
+};
+
+useEffect(fetchBehaviorLogs, [selectedStudent, selectedDate]);
+
+
+
 
   const handleAdded = (newLog) => {
     setLogs([newLog, ...logs]);
@@ -48,6 +70,7 @@ const BehaviorPage = () => {
           students={students}
         />
 
+
         <BehaviorTable data={logs} onView={(log) => setSelectedLog(log)} />
 
         <BehaviorDetailsModal log={selectedLog} onClose={() => setSelectedLog(null)} />
@@ -55,9 +78,10 @@ const BehaviorPage = () => {
         {showAddModal && (
           <AddBehaviorModal
             onClose={() => setShowAddModal(false)}
-            onAdded={handleAdded}
+            onAdded={fetchBehaviorLogs}
           />
         )}
+
       </div>
     </div>
   );

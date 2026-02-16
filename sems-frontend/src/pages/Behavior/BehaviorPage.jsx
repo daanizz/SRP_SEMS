@@ -1,50 +1,42 @@
-import React, { useState } from "react";
+// pages/Behavior/BehaviorPage.jsx
+import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
 import BehaviorFilter from "./BehaviorFilter";
 import BehaviorTable from "./BehaviorTable";
 import BehaviorDetailsModal from "../../components/BehaviorDetailsModal";
 import AddBehaviorModal from "../../components/AddBehaviorModal";
-import { useEffect } from "react";
 import { getStudents } from "../../api/studentApi";
 import { getBehaviorLogs } from "../../api/behaviorApi";
-
-
-// if (!localStorage.getItem("accessToken")) {
-//   window.location.href = "/login";
-// }
 
 const BehaviorPage = () => {
   const [activeNav, setActiveNav] = useState("Behavior");
   const [students, setStudents] = useState([]);
-const [selectedStudent, setSelectedStudent] = useState("");
-const [selectedDate, setSelectedDate] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [logs, setLogs] = useState([]);
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
-const [logs, setLogs] = useState([]);
-const [selectedLog, setSelectedLog] = useState(null);
-const [showAddModal, setShowAddModal] = useState(false);
+  useEffect(() => {
+    getStudents().then((res) => setStudents(res.data));
+  }, []);
 
+  const fetchBehaviorLogs = () => {
+    if (!selectedStudent) {
+      setLogs([]);
+      return;
+    }
 
-useEffect(() => {
-  getStudents().then((res) => setStudents(res.data));
-}, []);
+    getBehaviorLogs({ studentId: selectedStudent })
+      .then((res) => setLogs(res.data));
+  };
 
-
-const fetchBehaviorLogs = () => {
-  if (!selectedStudent) return;
-
-  getBehaviorLogs({
-    studentId: selectedStudent,
-    date: selectedDate,
-  }).then((res) => setLogs(res.data));
-};
-
-useEffect(fetchBehaviorLogs, [selectedStudent, selectedDate]);
-
-
-
+  useEffect(fetchBehaviorLogs, [selectedStudent]);
 
   const handleAdded = (newLog) => {
-    setLogs([newLog, ...logs]);
+    // add immediately if same student selected
+    if (newLog.studentId === selectedStudent || newLog.studentId?._id === selectedStudent) {
+      setLogs((prev) => [newLog, ...prev]);
+    }
   };
 
   return (
@@ -56,7 +48,8 @@ useEffect(fetchBehaviorLogs, [selectedStudent, selectedDate]);
           <h2 className="text-4xl font-bold">Behavior Tracking</h2>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl transition"
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600
+            text-white rounded-xl shadow-lg hover:shadow-xl transition"
           >
             + Add Log
           </button>
@@ -65,23 +58,23 @@ useEffect(fetchBehaviorLogs, [selectedStudent, selectedDate]);
         <BehaviorFilter
           selectedStudent={selectedStudent}
           setSelectedStudent={setSelectedStudent}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
           students={students}
         />
 
-
         <BehaviorTable data={logs} onView={(log) => setSelectedLog(log)} />
 
-        <BehaviorDetailsModal log={selectedLog} onClose={() => setSelectedLog(null)} />
+        <BehaviorDetailsModal
+          log={selectedLog}
+          onClose={() => setSelectedLog(null)}
+        />
 
         {showAddModal && (
           <AddBehaviorModal
             onClose={() => setShowAddModal(false)}
-            onAdded={fetchBehaviorLogs}
+            onAdded={handleAdded}
+            students={students}
           />
         )}
-
       </div>
     </div>
   );

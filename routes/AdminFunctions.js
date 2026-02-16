@@ -203,15 +203,15 @@ router.get("/getCategories", authenticate, async (req, res) => {
 // Class (admin only)
 router.post("/addClass", authenticate, async (req, res) => {
   try {
-    const { name, categoryId, teacherId, academicYearId } = req.body;
+    const { name, categoryId, teacherId } = req.body;
 
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Admins only" });
     }
 
-    if (!name || !categoryId || !teacherId || !academicYearId) {
+    if (!name || !categoryId || !teacherId) {
       return res.status(400).json({
-        message: "name, categoryId, teacherId and academicYearId are required",
+        message: "name, categoryId and teacherId are required",
       });
     }
 
@@ -219,13 +219,13 @@ router.post("/addClass", authenticate, async (req, res) => {
       name,
       categoryId,
       teacherId,
-      academicYearId,
     });
 
     res.status(201).json({
       message: "Class created successfully",
       class: newClass,
     });
+
   } catch (err) {
     console.error("ADD CLASS ERROR:", err);
     res.status(500).json({
@@ -235,17 +235,41 @@ router.post("/addClass", authenticate, async (req, res) => {
   }
 });
 
+// GET all subjects (admin & teacher)
+router.get("/subjects", authenticate, async (req, res) => {
+  try {
+    if (!["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    const subjects = await Subject.find()
+      .populate("categoryId", "name")
+      .populate("termId", "startDate endDate")
+      .populate("teacherId", "fullName")
+      .sort({ name: 1 });
+
+    res.json(subjects);
+  } catch (err) {
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
+  }
+});
+
+
+
+
 // GET all classes (admin)
 router.get("/classes", authenticate, async (req, res) => {
   try {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "teacher") {
       return res.status(403).json({ message: "Admins only" });
     }
 
     const classes = await Class.find()
       .populate("categoryId", "name")
       .populate("teacherId", "fullName email")
-      .populate("academicYearId", "year");
 
     res.json(classes);
   } catch (err) {
@@ -288,6 +312,10 @@ router.get("/students", authenticate, async (req, res) => {
     if (name) {
       filter.name = { $regex: name, $options: "i" }; // case-insensitive
     }
+    if (req.query.classId) {
+      filter.classId = req.query.classId;
+    }
+
 
     if (categoryId) {
       filter.categoryId = categoryId;

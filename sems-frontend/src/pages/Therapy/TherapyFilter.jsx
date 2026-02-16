@@ -28,24 +28,9 @@ const TherapyFilter = ({
         </select>
       </div>
 
-      {/* Date */}
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Filter by date
-        </label>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="w-full px-4 py-3 border-2 rounded-xl"
-        />
-      </div>
 
-      <div className="flex items-end">
-        <button className="w-full px-8 py-3 bg-blue-600 text-white rounded-xl">
-          Apply
-        </button>
-      </div>
+
+      
     </div>
   );
 };

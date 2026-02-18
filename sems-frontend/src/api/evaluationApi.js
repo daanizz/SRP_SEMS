@@ -25,3 +25,5 @@ export const getEvaluations = (params) =>
 // Add evaluation
 export const addEvaluation = (data) =>
   API.post("/api/teacher/addEvaluation", data);
+
+

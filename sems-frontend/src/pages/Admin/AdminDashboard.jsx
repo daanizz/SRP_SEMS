@@ -68,11 +68,11 @@ const AdminDashboard = () => {
       onClick: () => setShowCategoryModal(true),
     },
     {
-  name: "Add Subject",
-  icon: <BookOpen className="w-8 h-8" />,
-  color: "from-teal-500 to-emerald-600",
-  onClick: () => setShowSubjectModal(true),
-},
+      name: "Add Subject",
+      icon: <BookOpen className="w-8 h-8" />,
+      color: "from-teal-500 to-emerald-600",
+      onClick: () => setShowSubjectModal(true),
+    },
 
   ];
 
@@ -83,39 +83,39 @@ const AdminDashboard = () => {
       <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} />
 
       {/* MAIN AREA */}
-      <div className="flex-1 p-10 overflow-auto">
-        
+      <div className="flex-1 p-4 pt-16 md:p-10 md:pt-10 overflow-auto">
+
         {/* ⭐ If Games is selected, show Games page directly */}
         {activeNav === "Dashboard" && (
-  <>
-    <h1 className="text-4xl font-bold mb-8">
-      Welcome to Admin Portal
-    </h1>
+          <>
+            <h1 className="text-4xl font-bold mb-8">
+              Welcome to Admin Portal
+            </h1>
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {actions.map((action, idx) => (
-        <motion.div
-          key={idx}
-          className={`p-8 rounded-2xl shadow-xl cursor-pointer text-white bg-gradient-to-br ${action.color}`}
-          onClick={action.onClick}
-        >
-          {action.icon}
-          <p>{action.name}</p>
-        </motion.div>
-      ))}
-    </div>
-  </>
-)}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {actions.map((action, idx) => (
+                <motion.div
+                  key={idx}
+                  className={`p-8 rounded-2xl shadow-xl cursor-pointer text-white bg-gradient-to-br ${action.color}`}
+                  onClick={action.onClick}
+                >
+                  {action.icon}
+                  <p>{action.name}</p>
+                </motion.div>
+              ))}
+            </div>
+          </>
+        )}
 
-{activeNav === "Students" && <StudentsPage />}
+        {activeNav === "Students" && <StudentsPage />}
 
-{activeNav === "Games" && <GamePortal hideSidebar />}
+        {activeNav === "Games" && <GamePortal hideSidebar />}
 
       </div>
       <AddTeacherModal
-  open={showTeacherModal}
-  onClose={() => setShowTeacherModal(false)}
-/>
+        open={showTeacherModal}
+        onClose={() => setShowTeacherModal(false)}
+      />
 
 
       <AddStudentModal
@@ -123,20 +123,20 @@ const AdminDashboard = () => {
         onClose={() => setShowStudentModal(false)}
       />
       <AddAcademicYearModal
-      open={showAcademicModal}
-      onClose={()=>setShowAcademicModal(false)} />
-      <AddClassModal 
-      open={showClassModal}
-      onClose={()=>setShowClassModal(false)} />
+        open={showAcademicModal}
+        onClose={() => setShowAcademicModal(false)} />
+      <AddClassModal
+        open={showClassModal}
+        onClose={() => setShowClassModal(false)} />
       <AddTermModal
-      open={showTermModal}
-      onClose={()=>setShowTermModal(false)} />
+        open={showTermModal}
+        onClose={() => setShowTermModal(false)} />
       <AddCategoryModal
-      open={showCategoryModal}
-      onClose={() => setShowCategoryModal(false)}/>
+        open={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)} />
       <AddSubjectModal
-      open={showSubjectModal}
-      onClose={() => setShowSubjectModal(false)}/>
+        open={showSubjectModal}
+        onClose={() => setShowSubjectModal(false)} />
     </div>
   );
 };

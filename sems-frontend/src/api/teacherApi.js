@@ -32,4 +32,4 @@ export const getEvaluations = (params) =>
 =========================== */
 
 export const getTeacherClasses = () =>
-  API.get("/api/teacher/teacher/classes");
+  API.get("/api/teacher/classes");

@@ -3,13 +3,15 @@ import { motion } from "framer-motion";
 
 import GameCard from "../../components/Games/GameCard";
 import DifficultyModal from "../../components/Games/DifficultyModal";
+import Sidebar from "../../components/Sidebar";
 
 import ShapeMatchGame from "../../components/Games/ShapeMatchGame";
 import MemoryGame from "../../components/Games/MemoryGame";
 import ColorGame from "../../components/Games/ColorGame";
 import DinoRunnerGame from "../../components/Games/DinoRunnerGame";
-import Sidebar from "../../components/Sidebar";
 
+import BubblePop from "../../components/Games/BubblePop";
+import SortingStation from "../../components/Games/SortingStation";
 
 const games = [
   {
@@ -20,11 +22,39 @@ const games = [
     description: "Match the correct shape!",
   },
   {
+    id: "bubble-pop",
+    name: "Bubble Pop",
+    icon: "🫧",
+    color: "from-cyan-400 to-blue-500",
+    description: "Pop bubbles before they float away!",
+  },
+  {
+    id: "sorting-station",
+    name: "Sorting Station",
+    icon: "🗂️",
+    color: "from-amber-400 to-orange-500",
+    description: "Sort items into correct bins!",
+  },
+  {
     id: "memory-game",
     name: "Memory Game",
     icon: "🧠",
     color: "from-blue-500 to-cyan-500",
     description: "Find matching pairs!",
+  },
+  {
+    id: "emotion-explorer",
+    name: "Emotion Explorer",
+    icon: "😊",
+    color: "from-yellow-400 to-orange-500",
+    description: "Learn to identify feelings!",
+  },
+  {
+    id: "pattern-master",
+    name: "Pattern Master",
+    icon: "🧩",
+    color: "from-indigo-500 to-purple-600",
+    description: "Complete the color sequence!",
   },
   {
     id: "color-game",
@@ -69,9 +99,37 @@ const GamesPortal = () => {
             onExit={() => setSelectedGame(null)}
           />
         );
+      case "bubble-pop":
+        return (
+          <BubblePop
+            difficulty={difficulty}
+            onExit={() => setSelectedGame(null)}
+          />
+        );
+      case "sorting-station":
+        return (
+          <SortingStation
+            difficulty={difficulty}
+            onExit={() => setSelectedGame(null)}
+          />
+        );
       case "memory-game":
         return (
           <MemoryGame
+            difficulty={difficulty}
+            onExit={() => setSelectedGame(null)}
+          />
+        );
+      case "emotion-explorer":
+        return (
+          <EmotionExplorer
+            difficulty={difficulty}
+            onExit={() => setSelectedGame(null)}
+          />
+        );
+      case "pattern-master":
+        return (
+          <PatternMaster
             difficulty={difficulty}
             onExit={() => setSelectedGame(null)}
           />
@@ -99,7 +157,7 @@ const GamesPortal = () => {
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
 
       {/* ✅ ALWAYS VISIBLE SIDEBAR */}
-       <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} />
+      <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} />
 
       {/* MAIN CONTENT */}
       <div className="flex-1 overflow-auto p-10">

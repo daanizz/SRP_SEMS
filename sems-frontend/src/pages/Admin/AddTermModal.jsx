@@ -73,10 +73,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import Input from "../../components/UI/Input";
 import Button from "../../components/UI/Button";
-import { addTerm } from "../../api/termApi";
+import { addTerm, updateTerm } from "../../api/termApi";
 import { getAcademicYears } from "../../api/academicApi";
 
-const AddTermModal = ({ open, onClose }) => {
+const AddTermModal = ({ open, onClose, initialData = null, onSuccess }) => {
+  if (!open) return null;
+
   const [form, setForm] = useState({
     startDate: "",
     endDate: "",
@@ -88,16 +90,34 @@ const AddTermModal = ({ open, onClose }) => {
   const [loadingYears, setLoadingYears] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      fetchAcademicYears();
-    }
+    fetchAcademicYears();
   }, [open]);
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : "",
+        endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : "",
+        schemaId: initialData.schemaId?._id || initialData.schemaId || "",
+      });
+    } else {
+      setForm({
+        startDate: "",
+        endDate: "",
+        schemaId: "",
+      });
+    }
+  }, [initialData, open]);
 
   const fetchAcademicYears = async () => {
     try {
       setLoadingYears(true);
       const res = await getAcademicYears();
-      setAcademicYears(res.data.years); // backend returns { years: [...] }
+      if (res.data.years) {
+        setAcademicYears(res.data.years);
+      } else {
+        setAcademicYears(Array.isArray(res.data) ? res.data : []);
+      }
     } catch (err) {
       console.error("Failed to load academic years");
     } finally {
@@ -118,38 +138,40 @@ const AddTermModal = ({ open, onClose }) => {
     }
 
     try {
-      await addTerm({
+      const payload = {
         startDate: new Date(form.startDate).toISOString(),
         endDate: new Date(form.endDate).toISOString(),
         schemaId: form.schemaId,
-      });
+      };
 
-      alert("Term added successfully");
+      if (initialData) {
+        await updateTerm(initialData._id, payload);
+        alert("Term updated successfully");
+      } else {
+        await addTerm(payload);
+        alert("Term added successfully");
+      }
 
-      setForm({
-        startDate: "",
-        endDate: "",
-        schemaId: "",
-      });
-
+      if (onSuccess) onSuccess();
       onClose();
 
     } catch (err) {
       setError(
-        err.response?.data?.message || "Failed to add term"
+        err.response?.data?.message || "Failed to save term"
       );
     }
   };
 
-  if (!open) return null;
-
   return (
     <AnimatePresence>
-      <motion.div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-        <motion.div className="bg-white p-8 rounded-2xl w-full max-w-md">
-          
+      <motion.div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
+        <motion.div
+          onClick={(e) => e.stopPropagation()}
+          className="bg-white p-8 rounded-2xl w-full max-w-md"
+        >
+
           <div className="flex justify-between mb-4">
-            <h2 className="text-2xl font-bold">Add Term</h2>
+            <h2 className="text-2xl font-bold">{initialData ? "Edit Term" : "Add Term"}</h2>
             <button onClick={onClose}>
               <X />
             </button>
@@ -203,7 +225,7 @@ const AddTermModal = ({ open, onClose }) => {
           </div>
 
           <Button onClick={handleSubmit}>
-            Create Term
+            {initialData ? "Update Term" : "Create Term"}
           </Button>
 
         </motion.div>

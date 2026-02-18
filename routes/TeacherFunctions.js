@@ -89,12 +89,14 @@ router.get("/classes", authenticate, async (req, res) => {
       return res.status(403).json({ message: "Teachers only" });
     }
 
+    console.log("Teacher Classes Request - User ID:", req.user.id);
     const classes = await Class.find({
       teacherId: req.user.id,
     })
       .populate("categoryId", "name")
       .populate("academicYearId", "year");
 
+    console.log("Teacher Classes Found:", classes.length);
     res.json(classes);
 
   } catch (err) {

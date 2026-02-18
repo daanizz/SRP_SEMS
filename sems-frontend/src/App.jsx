@@ -9,6 +9,11 @@ import TherapyPage from "./pages/Therapy/TherapyPage";
 
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import StudentsPage from "./pages/Admin/StudentsPage";
+import TeachersPage from "./pages/Admin/TeachersPage";
+import ClassesPage from "./pages/Admin/ClassesPage";
+import SubjectsPage from "./pages/Admin/SubjectsPage";
+import AcademicYearsPage from "./pages/Admin/AcademicYearsPage";
+import TermsPage from "./pages/Admin/TermsPage";
 
 import TeacherDashboard from "./pages/Teacher/TeacherDashboard";
 import GamesPortal from "./pages/Games/GamePortal";
@@ -37,8 +42,53 @@ function App() {
         <Route
           path="/admin/students"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "teacher"]}>
               <StudentsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/teachers"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <TeachersPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/classes"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <ClassesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/subjects"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <SubjectsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/academic-years"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AcademicYearsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/terms"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <TermsPage />
             </ProtectedRoute>
           }
         />

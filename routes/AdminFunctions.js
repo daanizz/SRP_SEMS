@@ -82,6 +82,17 @@ router.delete("/deleteAcademicYear/:id", authenticate, async (req, res) => {
   }
 });
 
+router.put("/updateAcademicYear/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    const { year } = req.body;
+    await AcademicSchema.findByIdAndUpdate(req.params.id, { year });
+    res.json({ message: "Academic Year updated" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 // Term (admin only)
 // Term (admin only)
 router.post("/addTerm", authenticate, async (req, res) => {
@@ -129,6 +140,48 @@ router.get("/getTerms", authenticate, async (req, res) => {
   }
 });
 
+router.delete("/deleteTerm/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    await Term.findByIdAndDelete(req.params.id);
+    res.json({ message: "Term deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+router.put("/updateTerm/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    const { startDate, endDate, schemaId } = req.body;
+    await Term.findByIdAndUpdate(req.params.id, { startDate, endDate, schemaId });
+    res.json({ message: "Term updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+router.delete("/deleteTerm/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    await Term.findByIdAndDelete(req.params.id);
+    res.json({ message: "Term deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+router.put("/updateTerm/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    const { startDate, endDate, schemaId } = req.body;
+    await Term.findByIdAndUpdate(req.params.id, { startDate, endDate, schemaId });
+    res.json({ message: "Term updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 router.post("/addSubject", authenticate, async (req, res) => {
   try {
     const { name, categoryId, termId, teacherId } = req.body;
@@ -157,6 +210,27 @@ router.post("/addSubject", authenticate, async (req, res) => {
   } catch (err) {
     console.error("ADD SUBJECT ERROR:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete("/deleteSubject/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    await Subject.findByIdAndDelete(req.params.id);
+    res.json({ message: "Subject deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+router.put("/updateSubject/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    const { name, categoryId, termId, teacherId } = req.body;
+    await Subject.findByIdAndUpdate(req.params.id, { name, categoryId, termId, teacherId });
+    res.json({ message: "Subject updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
@@ -232,6 +306,27 @@ router.post("/addClass", authenticate, async (req, res) => {
       message: "Server error",
       error: err.message,
     });
+  }
+});
+
+router.delete("/deleteClass/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    await Class.findByIdAndDelete(req.params.id);
+    res.json({ message: "Class deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+router.put("/updateClass/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    const { name, categoryId, teacherId } = req.body;
+    await Class.findByIdAndUpdate(req.params.id, { name, categoryId, teacherId });
+    res.json({ message: "Class updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
@@ -355,6 +450,7 @@ router.get("/students/:id/details", authenticate, async (req, res) => {
 
     const evaluations = await Evaluation.find({ studentId })
       .populate("subjectId", "name")
+      .populate("classId", "name")
       .populate("termId", "startDate endDate")
       .populate("evaluatedBy", "fullName")
       .sort({ createdAt: -1 });
@@ -370,12 +466,13 @@ router.get("/students/:id/details", authenticate, async (req, res) => {
 
     res.json({
       student,
-      evaluations,
-      therapies,
-      behaviors,
-      updates,
+      evaluations: evaluations || [],
+      therapies: therapies || [],
+      behaviors: behaviors || [],
+      updates: updates || [],
     });
   } catch (err) {
+    console.error("GET STUDENT DETAILS ERROR:", err);
     res.status(500).json({
       message: "Server error",
       error: err.message,
@@ -383,5 +480,54 @@ router.get("/students/:id/details", authenticate, async (req, res) => {
   }
 });
 
+
+// DELETE Teacher
+router.delete("/deleteTeacher/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: "Teacher deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// UPDATE Teacher
+router.put("/updateTeacher/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    const { fullName, email } = req.body;
+    await User.findByIdAndUpdate(req.params.id, { fullName, email });
+    res.json({ message: "Teacher updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// DELETE Student
+router.delete("/deleteStudent/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    await Student.findByIdAndDelete(req.params.id);
+    res.json({ message: "Student deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// UPDATE Student
+router.put("/updateStudent/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Admins only" });
+    // basic update, expand as needed
+    const { name, categoryId, classId, academicYearId } = req.body;
+    await Student.findByIdAndUpdate(req.params.id, {
+      name, categoryId, classId, academicYearId
+    });
+    res.json({ message: "Student updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
 
 export default router;

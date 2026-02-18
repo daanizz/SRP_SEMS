@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import Input from "../../components/UI/Input";
 import Button from "../../components/UI/Button";
-import { addClass } from "../../api/classApi";
+import { addClass, updateClass } from "../../api/classApi";
 import { getCategories } from "../../api/categoryApi";
 import { getTeachers } from "../../api/teacherApi";
 
-const AddClassModal = ({ open, onClose }) => {
+const AddClassModal = ({ open, onClose, initialData = null, onSuccess }) => {
+  if (!open) return null;
+
   const [form, setForm] = useState({
     name: "",
     categoryId: "",
@@ -20,23 +22,35 @@ const AddClassModal = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      fetchDropdownData();
-    }
+    fetchDropdownData();
   }, [open]);
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        name: initialData.name || "",
+        categoryId: initialData.categoryId?._id || initialData.categoryId || "",
+        teacherId: initialData.teacherId?._id || initialData.teacherId || "",
+      });
+    } else {
+      setForm({
+        name: "",
+        categoryId: "",
+        teacherId: "",
+      });
+    }
+  }, [initialData, open]);
+
 
   const fetchDropdownData = async () => {
     try {
       setLoading(true);
-
       const [catRes, teacherRes] = await Promise.all([
         getCategories(),
         getTeachers(),
       ]);
-
       setCategories(catRes.data);
       setTeachers(teacherRes.data);
-
     } catch (err) {
       console.error("Failed to load dropdown data");
     } finally {
@@ -56,26 +70,23 @@ const AddClassModal = ({ open, onClose }) => {
     }
 
     try {
-      await addClass(form);
+      if (initialData) {
+        await updateClass(initialData._id, form);
+        alert("Class updated successfully!");
+      } else {
+        await addClass(form);
+        alert("Class added successfully!");
+      }
 
-      alert("Class added successfully!");
-
-      setForm({
-        name: "",
-        categoryId: "",
-        teacherId: "",
-      });
-
+      if (onSuccess) onSuccess();
       onClose();
 
     } catch (err) {
       const msg =
-        err.response?.data?.message || "Failed to add class";
+        err.response?.data?.message || "Failed to save class";
       setErrorMsg(msg);
     }
   };
-
-  if (!open) return null;
 
   return (
     <AnimatePresence>
@@ -88,7 +99,7 @@ const AddClassModal = ({ open, onClose }) => {
           className="bg-white rounded-2xl p-8 w-full max-w-xl shadow-2xl"
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-3xl font-bold">Add Class</h2>
+            <h2 className="text-3xl font-bold">{initialData ? "Edit Class" : "Add Class"}</h2>
             <button onClick={onClose}>
               <X className="w-7 h-7" />
             </button>
@@ -155,7 +166,7 @@ const AddClassModal = ({ open, onClose }) => {
 
           <div className="mt-6">
             <Button onClick={handleSubmit}>
-              Create Class
+              {initialData ? "Update Class" : "Create Class"}
             </Button>
           </div>
 

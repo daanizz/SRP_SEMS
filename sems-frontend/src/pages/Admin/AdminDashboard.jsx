@@ -13,9 +13,7 @@ import { UserPlus, Users, BookOpen, Layers, Calendar } from "lucide-react";
 import AddTeacherModal from "./AddTeacherModal";
 
 
-if (!localStorage.getItem("accessToken")) {
-  window.location.href = "/login";
-}
+
 
 const AdminDashboard = () => {
   const [showStudentModal, setShowStudentModal] = useState(false);

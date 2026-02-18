@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import axios from "axios";
+import { addBehaviorLog } from "../api/behaviorApi";
 
 const AddBehaviorModal = ({ onClose, onAdded, students }) => {
   const [studentId, setStudentId] = useState("");
@@ -18,20 +18,12 @@ const AddBehaviorModal = ({ onClose, onAdded, students }) => {
     }
 
     try {
-      const { data } = await axios.post(
-        "http://localhost:5050/api/behavior/add",
-        {
-          studentId,
-          mood: mood.toLowerCase(),
-          notes,
-          date: today,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
+      const { data } = await addBehaviorLog({
+        studentId,
+        mood: mood.toLowerCase(),
+        notes,
+        date: today,
+      });
 
       onAdded(data);
       onClose();
@@ -109,11 +101,10 @@ const AddBehaviorModal = ({ onClose, onAdded, students }) => {
         <button
           onClick={handleSubmit}
           disabled={!studentId}
-          className={`w-full py-3 rounded-xl font-bold shadow-lg transition ${
-            !studentId
+          className={`w-full py-3 rounded-xl font-bold shadow-lg transition ${!studentId
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-          }`}
+            }`}
         >
           Save Log
         </button>
